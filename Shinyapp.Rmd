@@ -1,0 +1,491 @@
+---
+title: "Building Shiny Apps"
+author: "TABA Assignment third question  by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi"
+
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*Question 3*
+
+
+Suppose I give you a list of keywords - 5 or 10 or maybe even 100 long. The app
+input is the corpus file and the keyword list. Your task would be to go into the corpus,
+sentence-tokenize it and fish out sentences that contain any of the keywords in the list.
+Collate all these keyword-matched sentences into a new 'keyword-filtered' corpus as your
+first output. Display the relative frequencies of the occurrence of the keywords in your corpus
+as a bar-chart and as a wordcloud (in separate output tabs) as your second output.
+Here is a sample keyword list to test and try on your automotive corpus:
+keyword_list = c('engine', 'mileage', 'comfort', 'performance', 'interior', 'maintenance', 'price') 
+
+Shiny works *only* in RStudio. If you haven't installed shiny package yet, do so. 
+
+```{r,eval=FALSE, echo=T}
+if (!require(shiny)) {install.packages('shiny')}
+
+
+```
+
++  This application has two components  
++  [1] a user interface object,    (ui.r)
++  [2] a server file (server.r)    All the methods are here
+
+##FIrst, let's see the first approach.
+
+##ui.R
+
+
+First, load all the required packages for the app including `shiny`.  In what follows, just read the ui.R script file line by line and correspond with the funcs below.
+
++  After that we can call the function `shinyUI()` and define the appearance of our app.   
++  Next, the function `fluidPage()` defines a dynamic application layout enabling the app to automatically fit a screen size.  
+  
++  Next, the function `titlePanel()` creates a panel containing an application title.  
+
++ Then, function `sidebarLayout` creates a layout with a sidebar and main area. The sidebar is displayed with a distinct background color and typically contains input controls. 
+
++  function `sidebarPanel()` creates a sidebar panel containing input controls such `selectInput`, 'text input'.
+
++  function `mainPanel()` creates a main panel containing output elements, typically structured in *tabs*, i.e.,  multiple independently viewable sections.   
+ 
++  function `tabsetPanel()` creates a set of tabs with *tabPanel* elements.   
+  
++  function `tabPanel()` creates a tab panel that can be included within a tabsetPanel.
+
+### Output Types
+
+The app takes user input from the sidebar panel, processes it in the back-end and then typically displays output in the main area in the form of tables, wordcloud, graphs, plain text , etc
+
+dataTableOutput -- Article setences     ------------>      DataTable<br> ()
+imageOutput -- World cloud         ------------>       image<br>
+plotOutput  -- Bar graph with count         ------------>        plot<br>
+textOutput   -- keyword-filtered corpus output       ------------>         text<br>
+#This application that generates Setences, filteres the sentences using the keywords, generates word cloud, bar plot
+
+##UI.R
+
+```{r, eval= FALSE, echo=TRUE}
+library(shiny)
+library(dplyr)
+library(tidytext)
+library(textrank)
+library(text2vec)
+library(tm)
+library(tokenizers)
+library(wordcloud)
+library(slam)
+library(stringi)
+library(magrittr)
+library(tidyr)
+library(plotly)
+
+
+  #shinyUI(fluidPage(
+    
+    # Application title
+    titlePanel(" Shiny App"),
+    
+    # Sidebar with a slider input for number of bins
+    sidebarPanel(
+        
+        fileInput("file", "Upload text(.txt) file"),
+        
+      
+        textInput("filterw", ("Enter keyword list separated by comma(,) to create corpus file"), value = "engine,mileage,comfort,performance,interirorm,maintenance,price")
+        
+    ),
+    
+    mainPanel(
+        
+        tabsetPanel(type = "tabs",
+                    
+                    tabPanel("Overview",h4(p("How to use this App")),
+                             
+                             p("To use this app you need a text file  format.\n\n 
+                       To upload the  text file, click on Browse in left-sidebar panel and upload the txt file from your local machine. \n\n
+                       Once the file is uploaded, the shinyapp will compute a filtered word corpus file,word cloud,bargraph in the back-end with default inputs and accordingly results will be displayed in various tabs.", align = "justify")),
+                    
+                    tabPanel("Example dataset", h4(p("Download Sample text file")), 
+                             downloadButton('downloadData1', 'Download car  reviews txt file'),br(),br(),
+                             p("Please note that download will not work with RStudio interface. Download will work only in web-browsers. So open this app in a web-browser and then download the example file. For opening this app in web-browser click on \"Open in Browser\" as shown below -"),
+                             img(src = "example1.png")),
+                    
+                    tabPanel("Article Sentences",
+                             h4(p("Original Article Sentences")),
+                             tableOutput("article_sentences")),
+                    
+                    tabPanel("Keyword filter corpus ouput into sentences ", 
+                             h4(p("Keyword filter corpus ouput ")),
+                             tableOutput("corpus_output")),
+                    
+                    tabPanel("Keyword filter corpus ouput into string ", 
+                             h4(p("Keyword filter corpus ouput ")),
+                             tableOutput("corpus_output_string")),
+                    
+                    tabPanel("Word Cloud from main file ", 
+                             h4(p("Word Cloud plot ")),
+                             #plotOutput("wordcloudcorpusfile"),
+                             sidebarLayout(
+                               # Sidebar with a slider and selection inputs
+                               sidebarPanel(
+                                 
+                                 sliderInput("freq",
+                                             "Minimum Frequency:",
+                                             min = 1,  max = 10, value = 15),
+                                 sliderInput("max",
+                                             "Maximum Number of Words:",
+                                             min = 1,  max = 20,  value = 100)
+                               ),
+                               mainPanel(
+                                 plotOutput("wordcloud")
+                                 
+                               ))),
+                    
+
+                    
+                    tabPanel("Word Cloud from first corpus output file ", 
+                             h4(p("Word Cloud plot ")),
+                             #plotOutput("wordcloudcorpusfile"),
+                             sidebarLayout(
+                               # Sidebar with a slider and selection inputs
+                               sidebarPanel(
+                                 
+                                 sliderInput("freq1",
+                                             "Minimum Frequency:",
+                                             min = 1,  max = 10, value = 15),
+                                 sliderInput("max1",
+                                             "Maximum Number of Words:",
+                                             min = 1,  max = 20,  value = 100)
+                               ),
+                               mainPanel(
+                                 plotOutput("wordcloudcorpusfile")
+                                 
+                               ))),
+                    
+                    
+                    tabPanel("Word Cloud from corpus file using filter keyword ", 
+                             h4(p("Word Cloud plot ")),
+                             plotOutput("wordcloudcorpusfile1")),
+                    
+                    tabPanel("Bar Graph using keywords", 
+                             h5(p("Bar plot ")),
+                             plotOutput("barplot"))
+              
+                    
+                   
+        )  # tabSetPanel closes
+        
+    )  # mainPanel closes
+    
+)
+)  # fluidPage() & ShinyUI() close
+
+## 
+## Including Plots
+
+```
+
+## server.R 
+
+Any server.R script always starts with function `shinyServer()`. 
+
+Render functions
+corpus_output- Divides into sentences from the import file
+wordcloud -- Generates word cloud from the import file
+wordcloudcorpusfile-- Generates word cloud from the file which we generated by filtering the keywords
+wordcloudcorpusfile1 -- Generates word cloud for filtered words like barplot (occurrence of the keywords in your corpus)
+barplot-- Generates bar plot
+
+```{r, eval= FALSE, echo=TRUE}
+
+#TABA Assignment third question  by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi
+# This is the server logic of a Shiny web application. You can run the
+# application by clicking 'Run App' above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+
+# Define server logic  Reading txt file.
+shinyServer(function(input, output) {
+    
+    
+    dataset <- reactive({
+        # Reading the .txt file
+        if (is.null(input$file)) {return(NULL)}
+        else {
+            
+            dataset = readLines(input$file$datapath)
+            
+            
+            return(dataset)}
+        
+    })
+    
+require(dplyr)
+require(magrittr)
+require(tidytext)
+
+
+    # Function to return sentences from a given text file used tiblle dataframe
+    
+text_clean = function(text_dump)  {
+  corpus_output = tibble(text_dump) %>%
+  unnest_tokens(sentence, text_dump, token = "sentences", to_lower=FALSE) %>%    # sentence-tokenizing the article   
+  mutate(sentence_id = row_number()) %>%    # insert setence_id
+  select(sentence_id, sentence)  # drop frivolous stuff  
+  return(corpus_output)
+}  
+
+
+
+
+## From text file divide into sentence depends on the keywords provided in the text box
+corpus_output <- reactive({
+  
+  dataset1 <<- text_clean(text_dump  = dataset())  # Dividing into sentences from a given file 
+
+  
+  mylist <- data.frame() # Copying the setences into a dataframe
+  key=input$filterw  # Taking filter values
+  key=gsub(",","|",key) # Seperating comman values and appending |(or)
+
+       
+  for (row in 1:nrow(dataset1)) {
+    description <- dataset1[row, "sentence"]
+
+    
+    bool=grepl(tolower(key),tolower(description))
+    if (bool==TRUE) {
+      mylist<-rbind(mylist,description)  # Checking filter word is available in the sentence , if "yes" add into my list
+    }
+    }
+     return(mylist)
+  
+    })
+
+   
+    output$corpus_output <- renderTable({ corpus_output() })
+    
+    
+    ## From text file divide into a string  depends on the keywords provided in the text box (First outputfile)
+    
+    require(dplyr)
+    require(magrittr)
+    require(tidytext)
+    
+    ## load data into tibble
+    corpus_output_string <- reactive({
+      dataset1 <<- text_clean(text_dump  = dataset()) # Take the data from the file
+      mylist <- data.frame()
+      mystring<-NULL;
+      key=input$filterw
+      key=gsub(",","|",key) # Seperate the userinput from commas to form a "OR" conditon
+      
+      for (row in 1:nrow(dataset1)) {
+        description <- dataset1[row, "sentence"]
+        bool=grepl(tolower(key),tolower(description)) # Returning true or false depending on the userinput values and sentences
+        
+        if (bool==TRUE) { # If it is true form a sentence and a string
+          mylist<-rbind(mylist,description)
+          mystring<-paste(mystring,description,sep=" ") # Forming a string 
+
+        }
+
+      }
+
+      return(mystring)
+    })
+    
+    
+    output$corpus_output_string <- renderTable({ corpus_output_string() })  #Rerurning as a string
+    
+  
+     # Word cloud for the main file (user input file)
+    
+    library("tm")
+    library("SnowballC")
+    library("wordcloud")
+    library("RColorBrewer")
+      
+    output$wordcloud <- renderPlot({
+      t_data <- readLines(input$file$datapath)
+      docs <- Corpus(VectorSource(t_data))
+      # Data cleaning
+      
+      docs_data<-tm_map(docs,stripWhitespace)
+      docs_data<-tm_map(docs_data,tolower)
+      docs_data<-tm_map(docs_data,removeNumbers)
+      docs_data<-tm_map(docs_data,removeNumbers)
+      docs_data<-tm_map(docs_data,removePunctuation)
+      docs_data<-tm_map(docs_data,removeWords, stopwords("english")) # General stop words in english
+      docs_data<-tm_map(docs_data,removeWords, c("that","for","are","also","more","has","must","have","should","this","with"))
+                        
+      
+      dtm <- TermDocumentMatrix(docs_data) # Creating document to matrix
+      
+      matr <- as.matrix(dtm) #matrix
+      fre<- sort(rowSums(matr),decreasing=TRUE)  # Frequencies of the words
+      d <- data.frame(word = names(fre),freq=fre)
+     
+      pal2 <- brewer.pal(8,"Dark2")
+      
+      
+      #Creating the word cloud 
+      wordcloud(words = d$word, freq = d$freq, min.freq = input$freq,
+                max.words=input$max, random.order=FALSE, rot.per=0.35, 
+                colors=pal2)
+    })
+    
+    
+    # Word cloud for the generated file from the keywords 
+    library("tm")
+    library("SnowballC")
+    library("wordcloud")
+    library("RColorBrewer")
+    
+     output$wordcloudcorpusfile <- renderPlot({
+      dataset1 <<- text_clean(text_dump  = dataset())
+      
+      mylist <- data.frame()
+      mystring<-NULL;
+      key=input$filterw
+      key=gsub(",","|",key)
+      
+      # print(mylist)
+      for (row in 1:nrow(dataset1)) {
+        description <- dataset1[row, "sentence"] # Creating string from the inputfile and filtered keywords
+         bool=grepl(tolower(key),tolower(description))
+        if (bool==TRUE) {
+          mylist<-rbind(mylist,description)
+          mystring<-paste(mystring,description,sep=" ") 
+
+        }
+        
+      }
+
+
+      t_data <- mystring # Word cloud for first out corpus string
+      
+      docs <- Corpus(VectorSource(t_data))
+      # Cleaning the data 
+      docs_data<-tm_map(docs,stripWhitespace)
+      docs_data<-tm_map(docs_data,tolower)
+      docs_data<-tm_map(docs_data,removeNumbers)
+      docs_data<-tm_map(docs_data,removeNumbers)
+      docs_data<-tm_map(docs_data,removePunctuation)
+      docs_data<-tm_map(docs_data,removeWords, stopwords("english")) # General stop words in english
+      docs_data<-tm_map(docs_data,removeWords, c("that","for","are","also","more","has","must","have","should","this","with"))
+      
+      dtm <- TermDocumentMatrix(docs_data)   # Creating document to matrix
+      
+      matr <- as.matrix(dtm) 
+      fre <- sort(rowSums(matr),decreasing=TRUE)  #Frequencies of the words
+      d <- data.frame(word = names(fre),freq=fre)
+      
+      pal2 <- brewer.pal(8,"Dark2") #Word cloud for corpus output
+       
+      wordcloud(words = d$word, freq = d$freq, min.freq = input$freq1,
+                max.words=input$max1, random.order=FALSE, rot.per=0.35, 
+                colors=pal2)
+    })
+    
+    
+     
+     
+     # Word cloud for the generated file from the keywords provided by the user (only keywords)
+     library("tm")
+     library("SnowballC")
+     library("wordcloud")
+     library("RColorBrewer")
+     
+       output$wordcloudcorpusfile1 <- renderPlot({
+       dataset1 <<- text_clean(text_dump  = dataset())
+      filedata <- readLines(input$file$datapath)
+ 
+       filedata<-tolower(filedata)
+      
+       docs <- Corpus(VectorSource(filedata))
+       
+       dtm <- TermDocumentMatrix(docs)
+       matr <- as.matrix(dtm)
+       fre <- sort(rowSums(matr),decreasing=TRUE)
+       d <- data.frame(word = names(fre),freq=fre)
+       key=input$filterw
+       key=tolower(key)
+       wrd <- c(unlist(strsplit(key,",")))
+   
+       wrd_data <- d %>% filter(word %in% wrd)
+       pal2 <- brewer.pal(8,"Dark2") #Word cloud for corpus output
+       
+       wordcloud(words = wrd_data$word, freq = d$freq, min.freq = input$freq1,
+                 max.words=input$max1, random.order=FALSE, rot.per=0.35, 
+                 colors=pal2)
+     })
+     
+
+      # Bar plot for filter words 
+       output$barplot <- renderPlot({
+      filedata <- readLines(input$file$datapath)
+      filedata<-tolower(filedata)
+      docs <- Corpus(VectorSource(filedata))
+      
+      dtm <- TermDocumentMatrix(docs)
+      matr <- as.matrix(dtm)
+      fre <- sort(rowSums(matr),decreasing=TRUE)
+      d <- data.frame(word = names(fre),freq=fre)
+      
+      key=input$filterw
+      key=tolower(key)
+      wrd <- c(unlist(strsplit(key,",")))
+      wrd_data <- d %>% filter(word %in% wrd)
+      par(mar=c(8,4,4,4))
+    
+      barplot(wrd_data$freq, las = 2, names.arg = wrd_data$word,
+              col ="lightblue", main ="Most frequent words",
+              ylab = "Word frequencies")
+    })
+    
+    
+    # Downloading sample file
+    output$downloadData1 <- downloadHandler(
+      filename = function() { "carreviews.txt" },
+      content = function(file) {
+        writeLines(readLines("data/carreviews.txt"), file)
+      }
+    )
+    
+    require(dplyr)
+    require(magrittr)
+    require(tidytext)
+    
+    ## Dividining the text file into sentences (first tab)
+    article_sentences <- reactive({
+        
+        article_sentences = tibble(text = dataset()) %>%
+            unnest_tokens(sentence, text, token = "sentences", to_lower=FALSE) %>%    # sentence-tokenizing the article   
+            mutate(sentence_id = row_number()) %>%    # insert setence_id
+            select(sentence_id, sentence)  # drop frivolous stuff
+        
+        return(article_sentences)
+    })
+    
+    output$article_sentences <- renderTable({ article_sentences() })
+   
+    })
+
+
+    
+
+
+```
+
+
+
+
