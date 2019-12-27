@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="TABA Assignment third question by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi" />
+<meta name="author" content="Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi" />
 
 
 <title>Building Shiny Apps</title>
@@ -375,20 +375,19 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Building Shiny Apps</h1>
-<h4 class="author">TABA Assignment third question by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi</h4>
+<h4 class="author">Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi</h4>
 
 </div>
 
 
 <p><em>Question 3</em></p>
 <p>Suppose I give you a list of keywords - 5 or 10 or maybe even 100 long. The app input is the corpus file and the keyword list. Your task would be to go into the corpus, sentence-tokenize it and fish out sentences that contain any of the keywords in the list. Collate all these keyword-matched sentences into a new ‘keyword-filtered’ corpus as your first output. Display the relative frequencies of the occurrence of the keywords in your corpus as a bar-chart and as a wordcloud (in separate output tabs) as your second output. Here is a sample keyword list to test and try on your automotive corpus: keyword_list = c(‘engine’, ‘mileage’, ‘comfort’, ‘performance’, ‘interior’, ‘maintenance’, ‘price’)</p>
-<p>Shiny works <em>only</em> in RStudio. If you haven’t installed shiny package yet, do so.</p>
-<pre class="r"><code>if (!require(shiny)) {install.packages(&#39;shiny&#39;)}</code></pre>
 <ul>
-<li>This application has two components<br />
+<li>This application has three components<br />
 </li>
 <li>[1] a user interface object, (ui.r)</li>
 <li>[2] a server file (server.r) All the methods are here</li>
+<li>[3] a server file ann user interface file (app.r) (We can execute this one file also)</li>
 </ul>
 <p>##FIrst, let’s see the first approach.</p>
 <p>##ui.R</p>
@@ -825,6 +824,435 @@ corpus_output &lt;- reactive({
     output$article_sentences &lt;- renderTable({ article_sentences() })
    
     })</code></pre>
+<p>##app.r App.r file has both the codes UI.R and Server.R, if we execute App.r file it is enough.</p>
+<pre class="r"><code>#  #TABA Assignment by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi
+
+#
+# This is the user-interface definition of a Shiny web application. You can
+# run the application by clicking &#39;Run App&#39; above.
+#
+if (!require(shiny)) {install.packages(&#39;shiny&#39;)}
+if (!require(shiny)) {install.packages(&#39;dplyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidytext&#39;)}
+if (!require(shiny)) {install.packages(&#39;textrank&#39;)}
+if (!require(shiny)) {install.packages(&#39;text2vec&#39;)}
+if (!require(shiny)) {install.packages(&#39;tm&#39;)}
+if (!require(shiny)) {install.packages(&#39;tokenizers&#39;)}
+if (!require(shiny)) {install.packages(&#39;wordcloud&#39;)}
+if (!require(shiny)) {install.packages(&#39;slam&#39;)}
+if (!require(shiny)) {install.packages(&#39;stringi&#39;)}
+if (!require(shiny)) {install.packages(&#39;magrittr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;plotly&#39;)}
+
+
+library(shiny)
+library(dplyr)
+library(tidytext)
+library(textrank)
+library(text2vec)
+library(tm)
+library(tokenizers)
+library(wordcloud)
+library(slam)
+library(stringi)
+library(magrittr)
+library(tidyr)
+library(plotly)
+
+# Define UI for application that draws a histogram
+ui &lt;- shinyUI(fluidPage(
+    
+    # Application title
+    titlePanel(&quot; Shiny App&quot;),
+    
+    # Sidebar with a slider input for number of bins
+    sidebarPanel(
+        
+        fileInput(&quot;file&quot;, &quot;Upload text(.txt) file&quot;),
+        
+      
+        textInput(&quot;filterw&quot;, (&quot;Enter keyword list separated by comma(,) to create corpus file&quot;), value = &quot;engine,mileage,comfort,performance,interirorm,maintenance,price&quot;)
+        
+    ),
+    
+    mainPanel(
+        
+        tabsetPanel(type = &quot;tabs&quot;,
+                    
+                    tabPanel(&quot;Overview&quot;,h4(p(&quot;How to use this App&quot;)),
+                             
+                             p(&quot;To use this app you need a text file  format.\n\n 
+                       To upload the  text file, click on Browse in left-sidebar panel and upload the txt file from your local machine. \n\n
+                       Once the file is uploaded, the shinyapp will compute a filtered word corpus file,word cloud,bargraph in the back-end with default inputs and accordingly results will be displayed in various tabs.&quot;, align = &quot;justify&quot;)),
+                    
+                    tabPanel(&quot;Example dataset&quot;, h4(p(&quot;Download Sample text file&quot;)), 
+                             downloadButton(&#39;downloadData1&#39;, &#39;Download car  reviews txt file&#39;),br(),br(),
+                             p(&quot;Please note that download will not work with RStudio interface. Download will work only in web-browsers. So open this app in a web-browser and then download the example file. For opening this app in web-browser click on \&quot;Open in Browser\&quot; as shown below -&quot;),
+                             img(src = &quot;example1.png&quot;)),
+                    
+                    tabPanel(&quot;Article Sentences&quot;,
+                             h4(p(&quot;Original Article Sentences&quot;)),
+                             tableOutput(&quot;article_sentences&quot;)),
+                    
+                    tabPanel(&quot;Keyword filter corpus ouput into sentences &quot;, 
+                             h4(p(&quot;Keyword filter corpus ouput &quot;)),
+                             tableOutput(&quot;corpus_output&quot;)),
+                    
+                    tabPanel(&quot;Keyword filter corpus ouput into string &quot;, 
+                             h4(p(&quot;Keyword filter corpus ouput &quot;)),
+                             tableOutput(&quot;corpus_output_string&quot;)),
+                    
+                    tabPanel(&quot;Word Cloud from main file &quot;, 
+                             h4(p(&quot;Word Cloud plot &quot;)),
+                             #plotOutput(&quot;wordcloudcorpusfile&quot;),
+                             sidebarLayout(
+                               # Sidebar with a slider and selection inputs
+                               sidebarPanel(
+                                 
+                                 sliderInput(&quot;freq&quot;,
+                                             &quot;Minimum Frequency:&quot;,
+                                             min = 1,  max = 10, value = 15),
+                                 sliderInput(&quot;max&quot;,
+                                             &quot;Maximum Number of Words:&quot;,
+                                             min = 1,  max = 50,  value = 40)
+                               ),
+                               mainPanel(
+                                 plotOutput(&quot;wordcloud&quot;)
+                                 
+                               ))),
+                    
+
+                    
+                    tabPanel(&quot;Word Cloud from first corpus output file &quot;, 
+                             h4(p(&quot;Word Cloud plot &quot;)),
+                             #plotOutput(&quot;wordcloudcorpusfile&quot;),
+                             sidebarLayout(
+                               # Sidebar with a slider and selection inputs
+                               sidebarPanel(
+                                 
+                                 sliderInput(&quot;freq1&quot;,
+                                             &quot;Minimum Frequency:&quot;,
+                                             min = 1,  max = 10, value = 15),
+                                 sliderInput(&quot;max1&quot;,
+                                             &quot;Maximum Number of Words:&quot;,
+                                             min = 1,  max = 20,  value = 100)
+                               ),
+                               mainPanel(
+                                 plotOutput(&quot;wordcloudcorpusfile&quot;)
+                                 
+                               ))),
+                    
+                    
+                    tabPanel(&quot;Word Cloud from corpus file using filter keyword &quot;, 
+                             h4(p(&quot;Word Cloud plot &quot;)),
+                             plotOutput(&quot;wordcloudcorpusfile1&quot;)),
+                    
+                    tabPanel(&quot;Bar Graph using keywords&quot;, 
+                             h5(p(&quot;Bar plot &quot;)),
+                             plotOutput(&quot;barplot&quot;))
+              
+                    
+                   
+        )  # tabSetPanel closes
+        
+    )  # mainPanel closes
+    
+)
+)  # fluidPage() &amp; ShinyUI() close
+
+
+# Define Server function
+
+
+#TABA Assignment  by Sakshi Srivastava, Krishnakanth Narupusetty,Abhinav Singh, Neha Dubey,Aswani kumar Javvadi
+# This is the server logic of a Shiny web application. You can run the
+# application by clicking &#39;Run App&#39; above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+if (!require(shiny)) {install.packages(&#39;dplyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;magrittr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidytext&#39;)}
+
+library(shiny)
+
+# Define server logic  Reading txt file.
+shinyServer(function(input, output) {
+  
+  
+  dataset &lt;- reactive({
+    # Reading the .txt file
+    if (is.null(input$file)) {return(NULL)}
+    else {
+      
+      dataset = readLines(input$file$datapath)
+      
+      
+      return(dataset)}
+    
+  })
+  
+  require(dplyr)
+  require(magrittr)
+  require(tidytext)
+  
+  
+  # Function to return sentences from a given text file used tiblle dataframe
+  
+  text_clean = function(text_dump)  {
+    corpus_output = tibble(text_dump) %&gt;%
+      unnest_tokens(sentence, text_dump, token = &quot;sentences&quot;, to_lower=FALSE) %&gt;%    # sentence-tokenizing the article   
+      mutate(sentence_id = row_number()) %&gt;%    # insert setence_id
+      select(sentence_id, sentence)  # drop frivolous stuff  
+    return(corpus_output)
+  }  
+  
+  
+  
+  
+  ## From text file divide into sentence depends on the keywords provided in the text box
+  corpus_output &lt;- reactive({
+    
+    dataset1 &lt;&lt;- text_clean(text_dump  = dataset())  # Dividing into sentences from a given file 
+    
+    
+    mylist &lt;- data.frame() # Copying the setences into a dataframe
+    key=input$filterw  # Taking filter values
+    key=gsub(&quot;,&quot;,&quot;|&quot;,key) # Seperating comman values and appending |(or)
+    
+    
+    for (row in 1:nrow(dataset1)) {
+      description &lt;- dataset1[row, &quot;sentence&quot;]
+      
+      
+      bool=grepl(tolower(key),tolower(description))
+      if (bool==TRUE) {
+        mylist&lt;-rbind(mylist,description)  # Checking filter word is available in the sentence , if &quot;yes&quot; add into my list
+      }
+    }
+    return(mylist)
+    
+  })
+  
+  
+  output$corpus_output &lt;- renderTable({ corpus_output() })
+  
+  
+  ## From text file divide into a string  depends on the keywords provided in the text box (First outputfile)
+  
+  require(dplyr)
+  require(magrittr)
+  require(tidytext)
+  
+  ## load data into tibble
+  corpus_output_string &lt;- reactive({
+    dataset1 &lt;&lt;- text_clean(text_dump  = dataset()) # Take the data from the file
+    mylist &lt;- data.frame()
+    mystring&lt;-NULL;
+    key=input$filterw
+    key=gsub(&quot;,&quot;,&quot;|&quot;,key) # Seperate the userinput from commas to form a &quot;OR&quot; conditon
+    
+    for (row in 1:nrow(dataset1)) {
+      description &lt;- dataset1[row, &quot;sentence&quot;]
+      bool=grepl(tolower(key),tolower(description)) # Returning true or false depending on the userinput values and sentences
+      
+      if (bool==TRUE) { # If it is true form a sentence and a string
+        mylist&lt;-rbind(mylist,description)
+        mystring&lt;-paste(mystring,description,sep=&quot; &quot;) # Forming a string 
+        
+      }
+      
+    }
+    
+    return(mystring)
+  })
+  
+  
+  output$corpus_output_string &lt;- renderTable({ corpus_output_string() })  #Rerurning as a string
+  
+  
+  # Word cloud for the main file (user input file)
+  
+  library(&quot;tm&quot;)
+  library(&quot;SnowballC&quot;)
+  library(&quot;wordcloud&quot;)
+  library(&quot;RColorBrewer&quot;)
+  
+  output$wordcloud &lt;- renderPlot({
+    t_data &lt;- readLines(input$file$datapath)
+    docs &lt;- Corpus(VectorSource(t_data))
+    # Data cleaning
+    
+    docs_data&lt;-tm_map(docs,stripWhitespace)
+    docs_data&lt;-tm_map(docs_data,tolower)
+    docs_data&lt;-tm_map(docs_data,removeNumbers)
+    docs_data&lt;-tm_map(docs_data,removeNumbers)
+    docs_data&lt;-tm_map(docs_data,removePunctuation)
+    docs_data&lt;-tm_map(docs_data,removeWords, stopwords(&quot;english&quot;)) # General stop words in english
+    docs_data&lt;-tm_map(docs_data,removeWords, c(&quot;that&quot;,&quot;for&quot;,&quot;are&quot;,&quot;also&quot;,&quot;more&quot;,&quot;has&quot;,&quot;must&quot;,&quot;have&quot;,&quot;should&quot;,&quot;this&quot;,&quot;with&quot;))
+    
+    
+    dtm &lt;- TermDocumentMatrix(docs_data) # Creating document to matrix
+    
+    matr &lt;- as.matrix(dtm) #matrix
+    fre&lt;- sort(rowSums(matr),decreasing=TRUE)  # Frequencies of the words
+    d &lt;- data.frame(word = names(fre),freq=fre)
+    
+    pal2 &lt;- brewer.pal(8,&quot;Dark2&quot;)
+    
+    
+    #Creating the word cloud 
+    wordcloud(words = d$word, freq = d$freq, min.freq = input$freq,
+              max.words=input$max, random.order=FALSE, rot.per=0.35, 
+              colors=pal2)
+  })
+  
+  
+  # Word cloud for the generated file from the keywords 
+  library(&quot;tm&quot;)
+  library(&quot;SnowballC&quot;)
+  library(&quot;wordcloud&quot;)
+  library(&quot;RColorBrewer&quot;)
+  
+  output$wordcloudcorpusfile &lt;- renderPlot({
+    dataset1 &lt;&lt;- text_clean(text_dump  = dataset())
+    
+    mylist &lt;- data.frame()
+    mystring&lt;-NULL;
+    key=input$filterw
+    key=gsub(&quot;,&quot;,&quot;|&quot;,key)
+    
+    # print(mylist)
+    for (row in 1:nrow(dataset1)) {
+      description &lt;- dataset1[row, &quot;sentence&quot;] # Creating string from the inputfile and filtered keywords
+      bool=grepl(tolower(key),tolower(description))
+      if (bool==TRUE) {
+        mylist&lt;-rbind(mylist,description)
+        mystring&lt;-paste(mystring,description,sep=&quot; &quot;) 
+        
+      }
+      
+    }
+    
+    
+    t_data &lt;- mystring # Word cloud for first out corpus string
+    
+    docs &lt;- Corpus(VectorSource(t_data))
+    # Cleaning the data 
+    docs_data&lt;-tm_map(docs,stripWhitespace)
+    docs_data&lt;-tm_map(docs_data,tolower)
+    docs_data&lt;-tm_map(docs_data,removeNumbers)
+    docs_data&lt;-tm_map(docs_data,removeNumbers)
+    docs_data&lt;-tm_map(docs_data,removePunctuation)
+    docs_data&lt;-tm_map(docs_data,removeWords, stopwords(&quot;english&quot;)) # General stop words in english
+    docs_data&lt;-tm_map(docs_data,removeWords, c(&quot;that&quot;,&quot;for&quot;,&quot;are&quot;,&quot;also&quot;,&quot;more&quot;,&quot;has&quot;,&quot;must&quot;,&quot;have&quot;,&quot;should&quot;,&quot;this&quot;,&quot;with&quot;))
+    
+    dtm &lt;- TermDocumentMatrix(docs_data)   # Creating document to matrix
+    
+    matr &lt;- as.matrix(dtm) 
+    fre &lt;- sort(rowSums(matr),decreasing=TRUE)  #Frequencies of the words
+    d &lt;- data.frame(word = names(fre),freq=fre)
+    
+    pal2 &lt;- brewer.pal(8,&quot;Dark2&quot;) #Word cloud for corpus output
+    
+    wordcloud(words = d$word, freq = d$freq, min.freq = input$freq1,
+              max.words=input$max1, random.order=FALSE, rot.per=0.35, 
+              colors=pal2)
+  })
+  
+  
+  
+  
+  # Word cloud for the generated file from the keywords provided by the user (only keywords)
+  library(&quot;tm&quot;)
+  library(&quot;SnowballC&quot;)
+  library(&quot;wordcloud&quot;)
+  library(&quot;RColorBrewer&quot;)
+  
+  output$wordcloudcorpusfile1 &lt;- renderPlot({
+    dataset1 &lt;&lt;- text_clean(text_dump  = dataset())
+    filedata &lt;- readLines(input$file$datapath)
+    
+    filedata&lt;-tolower(filedata)
+    
+    docs &lt;- Corpus(VectorSource(filedata))
+    
+    dtm &lt;- TermDocumentMatrix(docs)
+    matr &lt;- as.matrix(dtm)
+    fre &lt;- sort(rowSums(matr),decreasing=TRUE)
+    d &lt;- data.frame(word = names(fre),freq=fre)
+    key=input$filterw
+    key=tolower(key)
+    wrd &lt;- c(unlist(strsplit(key,&quot;,&quot;)))
+    
+    wrd_data &lt;- d %&gt;% filter(word %in% wrd)
+    pal2 &lt;- brewer.pal(8,&quot;Dark2&quot;) #Word cloud for corpus output
+    
+    wordcloud(words = wrd_data$word, freq = d$freq, min.freq = input$freq1,
+              max.words=input$max1, random.order=FALSE, rot.per=0.35, 
+              colors=pal2)
+  })
+  
+  
+  # Bar plot for filter words 
+  output$barplot &lt;- renderPlot({
+    filedata &lt;- readLines(input$file$datapath)
+    filedata&lt;-tolower(filedata)
+    docs &lt;- Corpus(VectorSource(filedata))
+    
+    dtm &lt;- TermDocumentMatrix(docs)
+    matr &lt;- as.matrix(dtm)
+    fre &lt;- sort(rowSums(matr),decreasing=TRUE)
+    d &lt;- data.frame(word = names(fre),freq=fre)
+    
+    key=input$filterw
+    key=tolower(key)
+    wrd &lt;- c(unlist(strsplit(key,&quot;,&quot;)))
+    wrd_data &lt;- d %&gt;% filter(word %in% wrd)
+    par(mar=c(8,4,4,4))
+    
+    barplot(wrd_data$freq, las = 2, names.arg = wrd_data$word,
+            col =&quot;lightblue&quot;, main =&quot;Most frequent words&quot;,
+            ylab = &quot;Word frequencies&quot;)
+  })
+  
+  
+  # Downloading sample file
+  output$downloadData1 &lt;- downloadHandler(
+    filename = function() { &quot;carreviews.txt&quot; },
+    content = function(file) {
+      writeLines(readLines(&quot;data/carreviews.txt&quot;), file)
+    }
+  )
+  
+  require(dplyr)
+  require(magrittr)
+  require(tidytext)
+  
+  ## Dividining the text file into sentences (first tab)
+  article_sentences &lt;- reactive({
+    
+    article_sentences = tibble(text = dataset()) %&gt;%
+      unnest_tokens(sentence, text, token = &quot;sentences&quot;, to_lower=FALSE) %&gt;%    # sentence-tokenizing the article   
+      mutate(sentence_id = row_number()) %&gt;%    # insert setence_id
+      select(sentence_id, sentence)  # drop frivolous stuff
+    
+    return(article_sentences)
+  })
+  
+  output$article_sentences &lt;- renderTable({ article_sentences() })
+  
+})
+
+
+
+
+
+# Now call shinyApp function
+shinyApp(ui = ui, server = server)</code></pre>
 </div>
 
 
