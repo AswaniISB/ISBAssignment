@@ -9,8 +9,12 @@ if (!require(shiny)) {install.packages('wordcloud')}
 if (!require(shiny)) {install.packages('slam')}
 if (!require(shiny)) {install.packages('stringi')}
 if (!require(shiny)) {install.packages('magrittr')}
-if (!require(shiny)) {install.packages('tidyr')}ṁ
+if (!require(shiny)) {install.packages('tidyr')}
 if (!require(shiny)) {install.packages('plotly')}
+if (!require(shiny)) {install.packages('tm')}
+if (!require(shiny)) {install.packages('SnowballC')}
+if (!require(shiny)) {install.packages('wordcloud')}
+if (!require(shiny)) {install.packages('RColorBrewe')}
 
 library(shiny)
 library(dplyr)
@@ -25,6 +29,10 @@ library(stringi)
 library(magrittr)
 library(tidyr)
 library(plotly)
+library(tm)
+library(wordcloud)
+library(RColorBrewe)
+library(SnowballC)
 
 # To execute Shiny app from github
 runGitHub( "AswaniISB/ISBAssignment", "AswaniISB")
