@@ -8,6 +8,12 @@
 #    http://shiny.rstudio.com/
 #
 
+if (!require(shiny)) {install.packages('dplyr')}
+if (!require(shiny)) {install.packages('magrittr')}
+if (!require(shiny)) {install.packages('tidytext')}
+
+
+
 library(shiny)
 
 # Define server logic  Reading txt file.

@@ -5,6 +5,19 @@
 # This is the user-interface definition of a Shiny web application. You can
 # run the application by clicking 'Run App' above.
 #
+if (!require(shiny)) {install.packages('shiny')}
+if (!require(shiny)) {install.packages('dplyr')}
+if (!require(shiny)) {install.packages('tidytext')}
+if (!require(shiny)) {install.packages('textrank')}
+if (!require(shiny)) {install.packages('text2vec')}
+if (!require(shiny)) {install.packages('tm')}
+if (!require(shiny)) {install.packages('tokenizers')}
+if (!require(shiny)) {install.packages('wordcloud')}
+if (!require(shiny)) {install.packages('slam')}
+if (!require(shiny)) {install.packages('stringi')}
+if (!require(shiny)) {install.packages('magrittr')}
+if (!require(shiny)) {install.packages('tidyr')}
+if (!require(shiny)) {install.packages('plotly')}
 
 
 library(shiny)
@@ -134,6 +147,9 @@ ui <- shinyUI(fluidPage(
 #
 #    http://shiny.rstudio.com/
 #
+if (!require(shiny)) {install.packages('dplyr')}
+if (!require(shiny)) {install.packages('magrittr')}
+if (!require(shiny)) {install.packages('tidytext')}
 
 library(shiny)
 
