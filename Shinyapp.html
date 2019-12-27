@@ -409,7 +409,22 @@ $(document).ready(function () {
 <p>The app takes user input from the sidebar panel, processes it in the back-end and then typically displays output in the main area in the form of tables, wordcloud, graphs, plain text , etc</p>
 <p>dataTableOutput – Article setences ————&gt; DataTable<br> () imageOutput – World cloud ————&gt; image<br> plotOutput – Bar graph with count ————&gt; plot<br> textOutput – keyword-filtered corpus output ————&gt; text<br> #This application that generates Setences, filteres the sentences using the keywords, generates word cloud, bar plot</p>
 <p>##UI.R</p>
-<pre class="r"><code>library(shiny)
+<pre class="r"><code>if (!require(shiny)) {install.packages(&#39;shiny&#39;)}
+if (!require(shiny)) {install.packages(&#39;dplyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidytext&#39;)}
+if (!require(shiny)) {install.packages(&#39;textrank&#39;)}
+if (!require(shiny)) {install.packages(&#39;text2vec&#39;)}
+if (!require(shiny)) {install.packages(&#39;tm&#39;)}
+if (!require(shiny)) {install.packages(&#39;tokenizers&#39;)}
+if (!require(shiny)) {install.packages(&#39;wordcloud&#39;)}
+if (!require(shiny)) {install.packages(&#39;slam&#39;)}
+if (!require(shiny)) {install.packages(&#39;stringi&#39;)}
+if (!require(shiny)) {install.packages(&#39;magrittr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;plotly&#39;)}
+
+
+library(shiny)
 library(dplyr)
 library(tidytext)
 library(textrank)
@@ -539,6 +554,9 @@ library(plotly)
 #
 #    http://shiny.rstudio.com/
 #
+if (!require(shiny)) {install.packages(&#39;dplyr&#39;)}
+if (!require(shiny)) {install.packages(&#39;magrittr&#39;)}
+if (!require(shiny)) {install.packages(&#39;tidytext&#39;)}
 
 library(shiny)
 
