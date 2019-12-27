@@ -9,7 +9,7 @@ if (!require(shiny)) {install.packages('wordcloud')}
 if (!require(shiny)) {install.packages('slam')}
 if (!require(shiny)) {install.packages('stringi')}
 if (!require(shiny)) {install.packages('magrittr')}
-if (!require(shiny)) {install.packages('tidyr')}
+if (!require(shiny)) {install.packages('tidyr')}ṁ
 if (!require(shiny)) {install.packages('plotly')}
 
 library(shiny)
