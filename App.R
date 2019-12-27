@@ -153,7 +153,7 @@ if (!require(shiny)) {install.packages('tidytext')}
 if (!require(shiny)) {install.packages('tm')}
 if (!require(shiny)) {install.packages('SnowballC')}
 if (!require(shiny)) {install.packages('wordcloud')}
-if (!require(shiny)) {install.packages('RColorBrewe')}
+if (!require(shiny)) {install.packages('RColorBrewer')}
 
 
 library(shiny)
