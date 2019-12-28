@@ -227,8 +227,11 @@ if (!require(shiny)) {install.packages('tm')}
 if (!require(shiny)) {install.packages('SnowballC')}
 if (!require(shiny)) {install.packages('wordcloud')}
 if (!require(shiny)) {install.packages('RColorBrewer')}
+if (!require(shiny)) {install.packages('plotly')}
 
 library(shiny)
+library(plotly)
+
 
 # Define server logic  Reading txt file.
 shinyServer(function(input, output) {

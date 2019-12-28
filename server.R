@@ -11,7 +11,7 @@
 if (!require(shiny)) {install.packages('dplyr')}
 if (!require(shiny)) {install.packages('magrittr')}
 if (!require(shiny)) {install.packages('tidytext')}
-
+if (!require(shiny)) {install.packages('plotly')}
 if (!require(shiny)) {install.packages('tm')}
 if (!require(shiny)) {install.packages('SnowballC')}
 if (!require(shiny)) {install.packages('wordcloud')}
@@ -19,6 +19,8 @@ if (!require(shiny)) {install.packages('RColorBrewer')}
 
 
 library(shiny)
+library(plotly)
+
 
 # Define server logic  Reading txt file.
 shinyServer(function(input, output) {
